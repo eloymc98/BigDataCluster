@@ -1,7 +1,7 @@
 # Copyright VMware, Inc.
 # SPDX-License-Identifier: APACHE-2.0
 
-version: '2'
+version: '3'
 
 services:
   spark:
@@ -27,14 +27,3 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
       - SPARK_USER=spark
-  namenode:
-    image: hdfs-namenode
-    ports:
-      - "9000:9000"
-      - "2222:22"
-      - "50070:50070"
-    volumes:
-      - ./data:/hadoop/data
-    environment:
-      - "HADOOP_CONF_DIR=/etc/hadoop"
-      - "USER=root"
