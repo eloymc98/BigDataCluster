@@ -3,37 +3,27 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 
 with DAG(
-        'start_spark_cluster',
-        description='Start Spark Cluster using Docker Compose',
-        schedule_interval=None,  # You can set the schedule as needed
+        'etl_task',
+        description='DAG that executes the ETL pipeline',
+        schedule_interval=None,
         start_date=datetime(2023, 10, 12),  # Adjust the start date
         catchup=False,
 ) as dag:
     # Define the path to your Docker Compose file
-    spark_compose_file = '../infra/spark/spark-compose.yml'
-    hdfs_compose_file = '../infra/spark/spark-compose.yml'
+    spark_compose_file = '/spark/spark-compose.yml'
+    hdfs_compose_file = '/hdfs/hdfs-compose.yml'
 
-
-    # Define the DockerOperator task
-    start_spark_cluster = DockerOperator(
+    create_spark_cluster = BashOperator(
         task_id='start_spark_cluster',
-        image='docker',
-        api_version='auto',
-        auto_remove='success',  # Remove the container when it finishes
-        command=f'compose -f {spark_compose_file} up -d',
-        network_mode='bridge',  # You can specify the network mode as needed
+        bash_command=f'docker-compose -f {spark_compose_file} up -d',
         dag=dag,
     )
 
-    # Define the DockerOperator task
-    start_hdfs_cluster = DockerOperator(
+    create_hdfs_cluster = BashOperator(
         task_id='start_hdfs_cluster',
-        image='docker',
-        api_version='auto',
-        auto_remove='success',  # Remove the container when it finishes
-        command=f'compose -f {docker_compose_file} up -d',
-        network_mode='bridge',  # You can specify the network mode as needed
+        bash_command=f'docker-compose -f {hdfs_compose_file} up -d',
         dag=dag,
     )
+
     # Set the task dependencies
-    start_spark_cluster
+    create_spark_cluster >> create_hdfs_cluster
