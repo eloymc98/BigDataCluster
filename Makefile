@@ -1,15 +1,7 @@
 # All
-start-all:
-	start-airflow
-	start-hdfs
-	start-spark
-	start-kafka
+start-all: start-airflow start-hdfs start-spark start-kafka
 
-stop-all:
-	stop-airflow
-	stop-hdfs
-	stop-spark
-	stop-kafka
+stop-all: stop-airflow stop-hdfs stop-spark stop-kafka
 
 # Airflow
 start-airflow:
@@ -34,3 +26,9 @@ start-kafka:
 	docker-compose -f ./infra/kafka/kafka-compose.yml up -d
 stop-kafka:
 	docker-compose -f ./infra/kafka/kafka-compose.yml down
+
+# Pipe
+start-pipe:
+	./infra/pipe/start-pipe.sh
+stop-pipe:
+	./infra/pipe/stop-pipe.sh

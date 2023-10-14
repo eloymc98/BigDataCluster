@@ -6,24 +6,26 @@ with DAG(
         'etl_task',
         description='DAG that executes the ETL pipeline',
         schedule_interval=None,
-        start_date=datetime(2023, 10, 12),  # Adjust the start date
+        start_date=datetime(2023, 10, 12),
         catchup=False,
 ) as dag:
-    # Define the path to your Docker Compose file
-    spark_compose_file = '/spark/spark-compose.yml'
-    hdfs_compose_file = '/hdfs/hdfs-compose.yml'
-
     create_spark_cluster = BashOperator(
-        task_id='start_spark_cluster',
-        bash_command=f'docker-compose -f {spark_compose_file} up -d',
+        task_id='create_spark_cluster',
+        bash_command='/opt/airflow/utils/execute-ssh-cmd.sh "{{ var.value.host }}" "{{ var.value.password }}" "{{ var.value.project_dir }}" start-spark',
         dag=dag,
     )
 
     create_hdfs_cluster = BashOperator(
-        task_id='start_hdfs_cluster',
-        bash_command=f'docker-compose -f {hdfs_compose_file} up -d',
+        task_id='create_hdfs_cluster',
+        bash_command='/opt/airflow/utils/execute-ssh-cmd.sh "{{ var.value.host }}" "{{ var.value.password }}" "{{ var.value.project_dir }}" start-hdfs',
+        dag=dag,
+    )
+
+    create_kafka_cluster = BashOperator(
+        task_id='create_kafka_cluster',
+        bash_command='/opt/airflow/utils/execute-ssh-cmd.sh "{{ var.value.host }}" "{{ var.value.password }}" "{{ var.value.project_dir }}" start-kafka',
         dag=dag,
     )
 
     # Set the task dependencies
-    create_spark_cluster >> create_hdfs_cluster
+    create_spark_cluster >> create_hdfs_cluster >> create_kafka_cluster
