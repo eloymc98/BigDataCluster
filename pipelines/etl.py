@@ -4,9 +4,9 @@ import json
 
 
 class ETL:
-    def __init__(self, spark):
+    def __init__(self, spark, metadata):
         self.spark = spark
-        self.metadata_filepath = "/Users/eloymc/Documents/BigDataEngProject/data/metadata.json"
+        self.metadata = metadata
 
     def validate_fields(self, df, validations):
         # By default all rows are valid
@@ -47,13 +47,8 @@ class ETL:
         return df
 
     def run(self):
-        # Read metadata
-        with open(self.metadata_filepath, "r") as json_file:
-            metadata = json.load(json_file)
-
         # Iterate over dataflows
-        for dataflow in metadata["dataflows"]:
-            name = dataflow["name"]
+        for dataflow in self.metadata["dataflows"]:
 
             # Read sources
             sources = dataflow["sources"]
@@ -106,8 +101,13 @@ class ETL:
 
 
 if __name__ == "__main__":
+    metadata_filepath = "/Users/eloymc/Documents/BigDataEngProject/data/metadata.json"
+    with open(metadata_filepath, "r") as json_file:
+        metadata = json.load(json_file)
+
     spark = SparkSession.builder.appName("SparkPipeline").getOrCreate()
     ETL(
-        spark=spark
+        spark=spark,
+        metadata=metadata
     ).run()
     spark.stop()
