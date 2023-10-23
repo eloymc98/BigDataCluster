@@ -1,12 +1,17 @@
+import argparse
+
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, current_timestamp, when, concat_ws, lit
+from pyspark.sql.functions import col, current_timestamp, when, concat_ws, lit, to_json, struct
 import json
 
 
 class ETL:
-    def __init__(self, spark, metadata):
+    def __init__(self, spark, metadata, kafka_broker, hdfs_host, hdfs_port):
         self.spark = spark
         self.metadata = metadata
+        self.kafka_broker = kafka_broker
+        self.hdfs_host = hdfs_host
+        self.hdfs_port = hdfs_port
 
     def validate_fields(self, df, validations):
         # By default all rows are valid
@@ -46,6 +51,23 @@ class ETL:
 
         return df
 
+    def to_kafka(self, df, topic):
+        df \
+            .select(to_json(struct("*")).alias("value")) \
+            .selectExpr("CAST(value AS STRING)") \
+            .write \
+            .format("kafka") \
+            .option("kafka.bootstrap.servers", self.kafka_broker) \
+            .option("topic", topic) \
+            .save()
+
+    def to_file(self, df, path, format, save_mode):
+        df \
+            .write \
+            .format(format) \
+            .mode(save_mode) \
+            .save(path)
+
     def run(self):
         # Iterate over dataflows
         for dataflow in self.metadata["dataflows"]:
@@ -57,7 +79,8 @@ class ETL:
                 source_name = source["name"]
                 path = source["path"]
                 format_type = source["format"]
-                df = self.spark.read.format(format_type).load(path)
+                hdfs_path = f"hdfs://{self.hdfs_host}:{self.hdfs_port}{path}"
+                df = self.spark.read.format(format_type).load(hdfs_path)
                 inputs[source_name] = df
 
             # Apply transformations
@@ -83,31 +106,32 @@ class ETL:
             sinks = dataflow["sinks"]
             for sink in sinks:
                 input = sink["input"]
-                sink_name = sink["name"]
                 format_type = sink["format"]
                 df = inputs[input]
 
                 if format_type == "KAFKA":
-                    # # Write to Kafka topic
-                    # topic = sink["topics"][0]
-                    # input_df.write.format("kafka").option("kafka.bootstrap.servers", "kafka_broker").option("topic",
-                    #                                                                                         topic).save()
-                    pass
+                    topics = sink["topics"]
+                    for topic in topics:
+                        self.to_kafka(df, topic)
+
                 elif format_type == "JSON":
                     save_mode = sink["saveMode"]
                     paths = sink["paths"]
                     for path in paths:
-                        df.write.format("json").mode(save_mode).save(path)
+                        self.to_file(df, path, "json", save_mode)
 
 
 if __name__ == "__main__":
-    metadata_filepath = "/Users/eloymc/Documents/BigDataEngProject/data/metadata.json"
-    with open(metadata_filepath, "r") as json_file:
-        metadata = json.load(json_file)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metadata", type=str, help="ETL metadata")
+    args = parser.parse_args()
 
     spark = SparkSession.builder.appName("SparkPipeline").getOrCreate()
     ETL(
         spark=spark,
-        metadata=metadata
+        metadata=json.loads(args.metadata),
+        kafka_broker='kafka-kafka-1:9092',
+        hdfs_host='namenode',
+        hdfs_port='9870'
     ).run()
     spark.stop()

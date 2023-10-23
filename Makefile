@@ -1,13 +1,14 @@
 # All
-start-all: start-airflow start-hdfs start-spark start-kafka
+start-all: start-network start-airflow start-hdfs start-spark start-kafka
 
-stop-all: stop-airflow stop-hdfs stop-spark stop-kafka
+stop-all: stop-airflow stop-hdfs stop-spark stop-kafka stop-network
 
 # Airflow
 start-airflow:
-	./infra/airflow/start-airflow.sh
+	docker build -t airflow:0.1 ./infra/airflow
+	docker-compose -f ./infra/airflow/airflow-compose.yml up -d
 stop-airflow:
-	./infra/airflow/stop-airflow.sh
+	docker-compose -f ./infra/airflow/airflow-compose.yml down
 
 # HDFS
 start-hdfs:
@@ -27,8 +28,8 @@ start-kafka:
 stop-kafka:
 	docker-compose -f ./infra/kafka/kafka-compose.yml down
 
-# Pipe
-start-pipe:
-	./infra/pipe/start-pipe.sh
-stop-pipe:
-	./infra/pipe/stop-pipe.sh
+# Network
+start-network:
+	docker network create -d bridge custom_network
+stop-network:
+	docker network rm custom_network

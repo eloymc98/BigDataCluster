@@ -16,7 +16,7 @@ expect {
             expect "*$host*"
             send "cd $dir\r"
             expect "$ "
-            send "make $command\r"
+            send "$command\r"
             expect "$ "
             send "exit\r"
             expect eof
