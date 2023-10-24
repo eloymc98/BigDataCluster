@@ -36,4 +36,8 @@ make test
 ``` 
 
 ## Important notes
-+ The project is intended to work with an arm64 architecture
++ The project is intended to work with an arm64 architecture, although modifying Airflow Dockerfile as follows should do the trick for amd64:
+```bash
+ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
+```
+
