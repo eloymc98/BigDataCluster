@@ -1,3 +1,7 @@
+################################################################################
+# Run the task
+################################################################################
+
 # All
 start-all: start-network start-airflow start-hdfs start-spark start-kafka
 
@@ -33,3 +37,10 @@ start-network:
 	docker network create -d bridge custom_network
 stop-network:
 	docker network rm custom_network
+
+################################################################################
+# Test the task
+################################################################################
+
+test:
+	python -m unittest discover -s tests

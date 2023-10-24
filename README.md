@@ -28,5 +28,12 @@ To stop all services run:
 make stop-all
 ```
 
+## Tests
+To test the spark etl, run:
+
+```bash
+make test
+``` 
+
 ## Important notes
 + The project is intended to work with an arm64 architecture
