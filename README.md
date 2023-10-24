@@ -20,7 +20,7 @@ Connections -> spark_default and fill the form with the following values:
 + Port: 7077
 + Extra: {"deploy-mode": "client"}
 
-Then you can run the etl_task DAG.
+Then you can run the etl_task DAG on Airflow UI.
 
 To stop all services run:
 
