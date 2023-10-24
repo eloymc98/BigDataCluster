@@ -13,6 +13,13 @@ class ETL:
         self.hdfs_host = hdfs_host
         self.hdfs_port = hdfs_port
 
+    def get_hdfs_path(self, path):
+        return f"hdfs://{self.hdfs_host}:{self.hdfs_port}{path}"
+
+    def read_hdfs(self, path, format):
+        if format == 'JSON':
+            return self.spark.read.json(path)
+
     def validate_fields(self, df, validations):
         # By default all rows are valid
         df = df.withColumn("failed_validations", lit(""))
@@ -77,10 +84,10 @@ class ETL:
             inputs = dict()
             for source in sources:
                 source_name = source["name"]
-                path = source["path"]
+                path = source["path"].replace("*", "")
                 format_type = source["format"]
-                hdfs_path = f"hdfs://{self.hdfs_host}:{self.hdfs_port}{path}"
-                df = self.spark.read.format(format_type).load(hdfs_path)
+                hdfs_path = self.get_hdfs_path(path)
+                df = self.read_hdfs(hdfs_path, format_type)
                 inputs[source_name] = df
 
             # Apply transformations
@@ -118,20 +125,25 @@ class ETL:
                     save_mode = sink["saveMode"]
                     paths = sink["paths"]
                     for path in paths:
-                        self.to_file(df, path, "json", save_mode)
+                        hdfs_path = self.get_hdfs_path(path)
+                        self.to_file(df, hdfs_path, "json", save_mode)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--metadata", type=str, help="ETL metadata")
+    parser.add_argument("--kafka_broker", type=str, help="Kafka broker")
+    parser.add_argument("--hdfs_host", type=str, help="HDFS host")
+    parser.add_argument("--hdfs_port", type=str, help="HDFS port")
+
     args = parser.parse_args()
 
     spark = SparkSession.builder.appName("SparkPipeline").getOrCreate()
     ETL(
         spark=spark,
         metadata=json.loads(args.metadata),
-        kafka_broker='kafka-kafka-1:9092',
-        hdfs_host='namenode',
-        hdfs_port='9870'
+        kafka_broker=args.kafka_broker,
+        hdfs_host=args.hdfs_host,
+        hdfs_port=args.hdfs_port
     ).run()
     spark.stop()

@@ -1,1 +1,32 @@
-# Big Data Senior Engineer Task
+# Big Data Cluster with Spark, HDFS, Kafka and Airflow
+## How to run the task
+The project is dockerized, to start all services run: 
+
+```bash
+make start-all
+```
+
+This process will start four docker-compose clusters, all sharing the same network:
+1. **Airflow**: It will run a standalone airflow. You can access it from: http://localhost:8090
+2. **HDFS**: It will run the HDFS cluster. You can access the namenode UI from: http://localhost:9870
+3. **Spark**: It will run the spark cluster. You can access the spark UI from: http://localhost:8080
+4. **Kafka**: It will run the kafka cluster. You can send events to kafka at: http://kafka:9092
+
+Once all services are up and running, you should configure the Spark Connection in Airflow. To do so, go to Admin -> 
+Connections -> spark_default and fill the form with the following values:
++ Conn Id: spark_default
++ Conn Type: Spark
++ Host: spark://spark-spark-1
++ Port: 7077
++ Extra: {"deploy-mode": "client"}
+
+Then you can run the etl_task DAG.
+
+To stop all services run:
+
+```bash
+make stop-all
+```
+
+## Important notes
++ The project is intended to work with an arm64 architecture
