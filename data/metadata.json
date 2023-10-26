@@ -1,7 +1,7 @@
 {
   "dataflows": [
     {
-      "name": "prueba-acceso",
+      "name": "example-dataflow",
       "sources": [
         {
           "name": "person_inputs",
